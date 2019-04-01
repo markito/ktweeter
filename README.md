@@ -1,4 +1,4 @@
-# ktweeter
+# ktweeter 🔊
 An example of an Azure Function that can post K8s events to a Twitter feed running in Kubernetes and using Knative.
 
 ## Setup
