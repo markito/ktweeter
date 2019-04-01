@@ -3,15 +3,34 @@ An example of an Azure Function that can post K8s events to a Twitter feed runni
 
 ## Setup
 
-### On OpenShift 
+### Prerequisites:
+- Download Azure Functions CLI `func`.  https://github.com/Azure/azure-functions-core-tools/releases
+- Python 3.6
+- Setup OpenShift/Kubernetes as described below with Knative.
+
+#### On OpenShift 
 
 Make sure you have a cluster Knative installed.  Instructions here...
 
-### On Minikube
+#### On Minikube
 
 Follow the instructions here to setup Minikube and Knative. https://redhat-developer-demos.github.io/knative-tutorial/knative-tutorial/v1.0.0/setup.html#kubernetes-cluster
 
-## Create function project 
+
+
+## Create a function project 
+
+For detailed information about how to create Python Functions in Azure Functions follow this guide: 
+https://docs.microsoft.com/en-us/azure/azure-functions/functions-create-first-function-python
+
+
+* Create a new python function app
+
+  `func init --worker-runtime python --docker`
+
+* Create a http-triggered function
+
+  `func new --template 'HTTP trigger' --name http-trigger`
 
 * Enable function logging to console
   ```
@@ -29,78 +48,83 @@ Follow the instructions here to setup Minikube and Knative. https://redhat-devel
   }
   ```
 * Disable auth for our http trigger
-```sed -i -e 's/"authLevel": "function"/"authLevel": "anonymous"/' http-trigger/function.json```
+
+  `sed -i -e 's/"authLevel": "function"/"authLevel": "anonymous"/' http-trigger/function.json`
 
 * Update the function code to log CloudEvents
-```
-cat <<EOF > http-trigger/__init__.py
-import logging
-import azure.functions as func
+  ```
+  cat <<EOF > http-trigger/__init__.py
+  import logging
+  import azure.functions as func
 
-def main(req: func.HttpRequest) -> func.HttpResponse:
-    try:
-        logging.info(f"Received CloudEvent: {req.get_json()}")
-    except ValueError:
-        logging.info('Ready to receive CloudEvents!')
-    return func.HttpResponse(status_code=200)
-EOF
-```
+  def main(req: func.HttpRequest) -> func.HttpResponse:
+      try:
+          logging.info(f"Received CloudEvent: {req.get_json()}")
+      except ValueError:
+          logging.info('Ready to receive CloudEvents!')
+      return func.HttpResponse(status_code=200)
+  EOF
+  ```
 
 ## Deploy 
 
-### Deploy the function to Knative
-```func deploy --platform knative --name http-trigger --registry docker.io/bbrowning --config ~/.kube/config```
+* Set container registry 
 
-### Ensure the function is up and returns a 200
-```curl -v -H "Host: httptrigger.azure-functions.example.com" http://$(minikube ip):31380/api/http-trigger```
+  `export REGISTRY=docker.io/markito`
 
-### Simulating POSTing an empty CloudEvent to it
-```curl -d "{}" -H "Content-Type: application/json" -H "Host: httptrigger.azure-functions.example.com" http://$(minikube ip):31380/api/http-trigger```
+* Deploy the function to Knative
+  `func deploy --platform knative --name http-trigger --registry $REGISTRY --config ~/.kube/config`
 
-### Check out the function logs
-```kubectl logs -n azure-functions -l serving.knative.dev/service=httptrigger -c user-container```
+* Ensure the function is up and returns a 200
+  `curl -v -H "Host: httptrigger.azure-functions.example.com" http://$(minikube ip):31380/api/http-trigger`
+
+* Simulating POSTing an empty CloudEvent to it
+  `curl -d "{}" -H "Content-Type: application/json" -H "Host: httptrigger.azure-functions.example.com" http://$(minikube ip):31380/api/http-trigger`
+
+* Check out the function logs
+  `kubectl logs -n azure-functions -l serving.knative.dev/service=httptrigger -c user-container`
 
 ## Knative Event Source Setup 
 
 ### Create a ServiceAccount with permissions to watch k8s events
-```
-cat <<EOF | kubectl create -f -
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  name: events-sa
-  namespace: default
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: Role
-metadata:
-  creationTimestamp: null
-  name: event-watcher
-rules:
-- apiGroups:
-  - ""
-  resources:
-  - events
-  verbs:
-  - get
-  - list
-  - watch
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: RoleBinding
-metadata:
-  creationTimestamp: null
-  name: k8s-ra-event-watcher
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
+  ```
+  cat <<EOF | kubectl create -f -
+  apiVersion: v1
+  kind: ServiceAccount
+  metadata:
+    name: events-sa
+    namespace: default
+  ---
+  apiVersion: rbac.authorization.k8s.io/v1
   kind: Role
-  name: event-watcher
-subjects:
-- kind: ServiceAccount
-  name: events-sa
-  namespace: default
-EOF
-```
+  metadata:
+    creationTimestamp: null
+    name: event-watcher
+  rules:
+  - apiGroups:
+    - ""
+    resources:
+    - events
+    verbs:
+    - get
+    - list
+    - watch
+  ---
+  apiVersion: rbac.authorization.k8s.io/v1
+  kind: RoleBinding
+  metadata:
+    creationTimestamp: null
+    name: k8s-ra-event-watcher
+  roleRef:
+    apiGroup: rbac.authorization.k8s.io
+    kind: Role
+    name: event-watcher
+  subjects:
+  - kind: ServiceAccount
+    name: events-sa
+    namespace: default
+  EOF
+  ```
 
 ### Create a Knative Eventing Channel
 ```
