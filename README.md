@@ -73,15 +73,19 @@ https://docs.microsoft.com/en-us/azure/azure-functions/functions-create-first-fu
   `export REGISTRY=docker.io/markito`
 
 * Deploy the function to Knative
+  
   `func deploy --platform knative --name http-trigger --registry $REGISTRY --config ~/.kube/config`
 
 * Ensure the function is up and returns a 200
+  
   `curl -v -H "Host: httptrigger.azure-functions.example.com" http://$(minikube ip):31380/api/http-trigger`
 
 * Simulating POSTing an empty CloudEvent to it
+  
   `curl -d "{}" -H "Content-Type: application/json" -H "Host: httptrigger.azure-functions.example.com" http://$(minikube ip):31380/api/http-trigger`
 
 * Check out the function logs
+  
   `kubectl logs -n azure-functions -l serving.knative.dev/service=httptrigger -c user-container`
 
 ## Knative Event Source Setup 
@@ -127,77 +131,77 @@ https://docs.microsoft.com/en-us/azure/azure-functions/functions-create-first-fu
   ```
 
 ### Create a Knative Eventing Channel
-```
-cat <<EOF | kubectl create -n default -f -
-apiVersion: eventing.knative.dev/v1alpha1
-kind: Channel
-metadata:
-  name: testchannel
-spec:
-  provisioner:
-    apiVersion: eventing.knative.dev/v1alpha1
-    kind: ClusterChannelProvisioner
-    name: in-memory-channel
-EOF
-```
+  ```
+  cat <<EOF | kubectl create -n default -f -
+  apiVersion: eventing.knative.dev/v1alpha1
+  kind: Channel
+  metadata:
+    name: testchannel
+  spec:
+    provisioner:
+      apiVersion: eventing.knative.dev/v1alpha1
+      kind: ClusterChannelProvisioner
+      name: in-memory-channel
+  EOF
+  ```
 
 
 ### Create a KubernetesEventSource
-```
-cat <<EOF | kubectl create -n default -f -
-apiVersion: sources.eventing.knative.dev/v1alpha1
-kind: KubernetesEventSource
-metadata:
-  name: testevents
-spec:
-  namespace: default
-  serviceAccountName: events-sa
-  sink:
-    apiVersion: eventing.knative.dev/v1alpha1
-    kind: Channel
-    name: testchannel
-EOF
-```
+  ```
+  cat <<EOF | kubectl create -n default -f -
+  apiVersion: sources.eventing.knative.dev/v1alpha1
+  kind: KubernetesEventSource
+  metadata:
+    name: testevents
+  spec:
+    namespace: default
+    serviceAccountName: events-sa
+    sink:
+      apiVersion: eventing.knative.dev/v1alpha1
+      kind: Channel
+      name: testchannel
+  EOF
+  ```
 
 ### Create a Subscription pointing to our Azure Function
-```
-cat <<EOF | kubectl create -n default -f -
-apiVersion: eventing.knative.dev/v1alpha1
-kind: Subscription
-metadata:
-  name: testevents-subscription
-spec:
-  channel:
-    apiVersion: eventing.knative.dev/v1alpha1
-    kind: Channel
-    name: testchannel
-  subscriber:
-    dnsName: http://httptrigger.azure-functions.svc.cluster.local/api/http-trigger
-EOF
-```
+  ```
+  cat <<EOF | kubectl create -n default -f -
+  apiVersion: eventing.knative.dev/v1alpha1
+  kind: Subscription
+  metadata:
+    name: testevents-subscription
+  spec:
+    channel:
+      apiVersion: eventing.knative.dev/v1alpha1
+      kind: Channel
+      name: testchannel
+    subscriber:
+      dnsName: http://httptrigger.azure-functions.svc.cluster.local/api/http-trigger
+  EOF
+  ```
 
 # Sending event 
 
-## Create a Kubernetes event to confirm things work
-```
-kubectl run -n default -i --tty busybox --image=busybox --restart=Never --rm=true -- sh
-```
+* Create a Kubernetes event to confirm things work
+  `kubectl run -n default -i --tty busybox --image=busybox --restart=Never --rm=true -- sh`
 
 Just exit the container after it starts by typing `exit`
 
-## Check out the function logs
-```
-kubectl logs -n azure-functions -l serving.knative.dev/service=httptrigger -c user-container
-```
+* Check out the function logs
+  `kubectl logs -n azure-functions -l serving.knative.dev/service=httptrigger -c user-container`
 
 Should see something like:
-```
-info: Function.http-trigger[0]
-      Executed 'Functions.http-trigger' (Succeeded, Id=4f07df31-a12c-4acd-9ede-297887fb38f7)
-info: Function.http-trigger[0]
-      Executing 'Functions.http-trigger' (Reason='This function was programmatically called via the host APIs.', Id=4b20130f-0869-4a16-aff1-11da9a447dbd)
-info: Function.http-trigger.User[0]
-      Received CloudEvent: {'metadata': {'name': 'busybox.158e659be89c8e31', 'namespace': 'default', 'selfLink': '/api/v1/namespaces/default/events/busybox.158e659be89c8e31', 'uid': 'acdf5462-4cea-11e9-93fd-307a181b66b4', 'resourceVersion': '31059', 'creationTimestamp': '2019-03-22T21:37:21Z'}, 'involvedObject': {'kind': 'Pod', 'namespace': 'default', 'name': 'busybox', 'uid': '955d19f5-4cea-11e9-93fd-307a181b66b4', 'apiVersion': 'v1', 'resourceVersion': '30978', 'fieldPath': 'spec.containers{busybox}'}, 'reason': 'Killing', 'message': 'Killing container with id docker://busybox:Need to kill Pod', 'source': {'component': 'kubelet', 'host': 'minikube'}, 'firstTimestamp': '2019-03-22T21:37:21Z', 'lastTimestamp': '2019-03-22T21:37:21Z', 'count': 1, 'type': 'Normal', 'eventTime': None, 'reportingComponent': '', 'reportingInstance': ''}
-info: Function.http-trigger[0]
-      Executed 'Functions.http-trigger' (Succeeded, Id=4b20130f-0869-4a16-aff1-11da9a447dbd)
-```
+  ```
+  info: Function.http-trigger[0]
+        Executed 'Functions.http-trigger' (Succeeded, Id=4f07df31-a12c-4acd-9ede-297887fb38f7)
+  info: Function.http-trigger[0]
+        Executing 'Functions.http-trigger' (Reason='This function was programmatically called via the host APIs.', Id=4b20130f-0869-4a16-aff1-11da9a447dbd)
+  info: Function.http-trigger.User[0]
+        Received CloudEvent: {'metadata': {'name': 'busybox.158e659be89c8e31', 'namespace': 'default', 'selfLink': '/api/v1/namespaces/default/events/busybox.158e659be89c8e31', 'uid': 'acdf5462-4cea-11e9-93fd-307a181b66b4', 'resourceVersion': '31059', 'creationTimestamp': '2019-03-22T21:37:21Z'}, 'involvedObject': {'kind': 'Pod', 'namespace': 'default', 'name': 'busybox', 'uid': '955d19f5-4cea-11e9-93fd-307a181b66b4', 'apiVersion': 'v1', 'resourceVersion': '30978', 'fieldPath': 'spec.containers{busybox}'}, 'reason': 'Killing', 'message': 'Killing container with id docker://busybox:Need to kill Pod', 'source': {'component': 'kubelet', 'host': 'minikube'}, 'firstTimestamp': '2019-03-22T21:37:21Z', 'lastTimestamp': '2019-03-22T21:37:21Z', 'count': 1, 'type': 'Normal', 'eventTime': None, 'reportingComponent': '', 'reportingInstance': ''}
+  info: Function.http-trigger[0]
+        Executed 'Functions.http-trigger' (Succeeded, Id=4b20130f-0869-4a16-aff1-11da9a447dbd)
+  ```
+
+# Troubleshooting
+
+
