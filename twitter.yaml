@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: twitter.creds
+type: Opaque
+data:
+  consumer_key: YWNjZXNzX3Rva2VuX3NlY3JldA==
+  consumer_secret: YWNjZXNzX3Rva2VuX3NlY3JldA==
+  access_token: YWNjZXNzX3Rva2VuX3NlY3JldA==
+  access_token_secret: YWNjZXNzX3Rva2VuX3NlY3JldA==
