@@ -17,7 +17,6 @@ Make sure you have a cluster Knative installed.  Instructions here...
 Follow the instructions here to setup Minikube and Knative. https://redhat-developer-demos.github.io/knative-tutorial/knative-tutorial/v1.0.0/setup.html#kubernetes-cluster
 
 
-
 ## Create a function project 
 
 For detailed information about how to create Python Functions in Azure Functions follow this guide: 
@@ -72,9 +71,33 @@ https://docs.microsoft.com/en-us/azure/azure-functions/functions-create-first-fu
 
   `export REGISTRY=docker.io/markito`
 
+* Update the Dockerfile - Add the following line right after `FROM`
+
+  `ENV ASPNETCORE_URLS=http://+:8080`
+
 * Deploy the function to Knative
   
   `func deploy --platform knative --name http-trigger --registry $REGISTRY --config ~/.kube/config`
+
+* Deploy the secret file with your Twitter API token and keys
+
+For example: 
+  ```
+  apiVersion: v1
+  kind: Secret
+  metadata:
+    name: twitter.creds
+  type: Opaque
+  data:
+    consumer_key: YWNjZXNzX3Rva2VuX3NlY3JldA==
+    consumer_secret: YWNjZXNzX3Rva2VuX3NlY3JldA==
+    access_token: YWNjZXNzX3Rva2VuX3NlY3JldA==
+    access_token_secret: YWNjZXNzX3Rva2VuX3NlY3JldA==
+  ```
+
+* Remember to encode those values in base64. For example: `echo -n 'VALUE' | base64
+VkFMVUU=` 
+
 
 * Ensure the function is up and returns a 200
   
