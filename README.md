@@ -50,20 +50,7 @@ https://docs.microsoft.com/en-us/azure/azure-functions/functions-create-first-fu
 
   `sed -i -e 's/"authLevel": "function"/"authLevel": "anonymous"/' http-trigger/function.json`
 
-* Update the function code to log CloudEvents
-  ```
-  cat <<EOF > http-trigger/__init__.py
-  import logging
-  import azure.functions as func
-
-  def main(req: func.HttpRequest) -> func.HttpResponse:
-      try:
-          logging.info(f"Received CloudEvent: {req.get_json()}")
-      except ValueError:
-          logging.info('Ready to receive CloudEvents!')
-      return func.HttpResponse(status_code=200)
-  EOF
-  ```
+The sample code to send _cloudevents_ to a Twitter feed is on `http-trigger/__init__.py`
 
 ## Deploy 
 
@@ -94,10 +81,21 @@ For example:
     access_token: YWNjZXNzX3Rva2VuX3NlY3JldA==
     access_token_secret: YWNjZXNzX3Rva2VuX3NlY3JldA==
   ```
+There is a `twitter.yaml` file that should be updated with proper values.  Once you update the file you can create the secrets using:
 
-* Remember to encode those values in base64. For example: `echo -n 'VALUE' | base64
-VkFMVUU=` 
+`kubectl apply -n azure-functions  -f twitter.yaml`
 
+ Remember to encode those values in base64. For example: `echo -n 'VALUE' | base64
+VkFMVUU=`  
+
+* We need to add the secrets to the service specification.  The easiest way to do that is to apply a patch as follows: 
+
+  ```
+  kubectl patch ksvc/http-trigger -n azure-functions --type json --patch "$(cat env_patch.json)"
+  service.serving.knative.dev/http-trigger patched
+  ```
+
+This patch will generate a new Revision in the Knative service since we are modifying the configuration of the application. 
 
 * Ensure the function is up and returns a 200
   
@@ -111,97 +109,24 @@ VkFMVUU=`
   
   `kubectl logs -n azure-functions -l serving.knative.dev/service=httptrigger -c user-container`
 
+
 ## Knative Event Source Setup 
 
 ### Create a ServiceAccount with permissions to watch k8s events
-  ```
-  cat <<EOF | kubectl create -f -
-  apiVersion: v1
-  kind: ServiceAccount
-  metadata:
-    name: events-sa
-    namespace: default
-  ---
-  apiVersion: rbac.authorization.k8s.io/v1
-  kind: Role
-  metadata:
-    creationTimestamp: null
-    name: event-watcher
-  rules:
-  - apiGroups:
-    - ""
-    resources:
-    - events
-    verbs:
-    - get
-    - list
-    - watch
-  ---
-  apiVersion: rbac.authorization.k8s.io/v1
-  kind: RoleBinding
-  metadata:
-    creationTimestamp: null
-    name: k8s-ra-event-watcher
-  roleRef:
-    apiGroup: rbac.authorization.k8s.io
-    kind: Role
-    name: event-watcher
-  subjects:
-  - kind: ServiceAccount
-    name: events-sa
-    namespace: default
-  EOF
-  ```
+
+`kubectl apply -f serviceAccount.yaml`
 
 ### Create a Knative Eventing Channel
-  ```
-  cat <<EOF | kubectl create -n default -f -
-  apiVersion: eventing.knative.dev/v1alpha1
-  kind: Channel
-  metadata:
-    name: testchannel
-  spec:
-    provisioner:
-      apiVersion: eventing.knative.dev/v1alpha1
-      kind: ClusterChannelProvisioner
-      name: in-memory-channel
-  EOF
-  ```
 
+`kubectl apply -f channel.yaml`
 
 ### Create a KubernetesEventSource
-  ```
-  cat <<EOF | kubectl create -n default -f -
-  apiVersion: sources.eventing.knative.dev/v1alpha1
-  kind: KubernetesEventSource
-  metadata:
-    name: testevents
-  spec:
-    namespace: default
-    serviceAccountName: events-sa
-    sink:
-      apiVersion: eventing.knative.dev/v1alpha1
-      kind: Channel
-      name: testchannel
-  EOF
-  ```
+
+`kubectl apply -f k8sEventSource.yaml`
 
 ### Create a Subscription pointing to our Azure Function
-  ```
-  cat <<EOF | kubectl create -n default -f -
-  apiVersion: eventing.knative.dev/v1alpha1
-  kind: Subscription
-  metadata:
-    name: testevents-subscription
-  spec:
-    channel:
-      apiVersion: eventing.knative.dev/v1alpha1
-      kind: Channel
-      name: testchannel
-    subscriber:
-      dnsName: http://httptrigger.azure-functions.svc.cluster.local/api/http-trigger
-  EOF
-  ```
+
+`kubectl apply -f subscription.yaml`
 
 # Sending event 
 
@@ -210,21 +135,31 @@ VkFMVUU=`
 
 Just exit the container after it starts by typing `exit`
 
-* Check out the function logs
+* Check the Twitter feed or container logs using: 
+
   `kubectl logs -n azure-functions -l serving.knative.dev/service=httptrigger -c user-container`
 
-Should see something like:
+You should see something like:
   ```
   info: Function.http-trigger[0]
         Executed 'Functions.http-trigger' (Succeeded, Id=4f07df31-a12c-4acd-9ede-297887fb38f7)
   info: Function.http-trigger[0]
         Executing 'Functions.http-trigger' (Reason='This function was programmatically called via the host APIs.', Id=4b20130f-0869-4a16-aff1-11da9a447dbd)
   info: Function.http-trigger.User[0]
-        Received CloudEvent: {'metadata': {'name': 'busybox.158e659be89c8e31', 'namespace': 'default', 'selfLink': '/api/v1/namespaces/default/events/busybox.158e659be89c8e31', 'uid': 'acdf5462-4cea-11e9-93fd-307a181b66b4', 'resourceVersion': '31059', 'creationTimestamp': '2019-03-22T21:37:21Z'}, 'involvedObject': {'kind': 'Pod', 'namespace': 'default', 'name': 'busybox', 'uid': '955d19f5-4cea-11e9-93fd-307a181b66b4', 'apiVersion': 'v1', 'resourceVersion': '30978', 'fieldPath': 'spec.containers{busybox}'}, 'reason': 'Killing', 'message': 'Killing container with id docker://busybox:Need to kill Pod', 'source': {'component': 'kubelet', 'host': 'minikube'}, 'firstTimestamp': '2019-03-22T21:37:21Z', 'lastTimestamp': '2019-03-22T21:37:21Z', 'count': 1, 'type': 'Normal', 'eventTime': None, 'reportingComponent': '', 'reportingInstance': ''}
+        {'metadata': {'name': 'busybox.158e659be89c8e31', 'namespace': 'default', 'selfLink': '/api/v1/namespaces/default/events/busybox.158e659be89c8e31', 'uid': 'acdf5462-4cea-11e9-93fd-307a181b66b4', 'resourceVersion': '31059', 'creationTimestamp': '2019-03-22T21:37:21Z'}, 'involvedObject': {'kind': 'Pod', 'namespace': 'default', 'name': 'busybox', 'uid': '955d19f5-4cea-11e9-93fd-307a181b66b4', 'apiVersion': 'v1', 'resourceVersion': '30978', 'fieldPath': 'spec.containers{busybox}'}, 'reason': 'Killing', 'message': 'Killing container with id docker://busybox:Need to kill Pod', 'source': {'component': 'kubelet', 'host': 'minikube'}, 'firstTimestamp': '2019-03-22T21:37:21Z', 'lastTimestamp': '2019-03-22T21:37:21Z', 'count': 1, 'type': 'Normal', 'eventTime': None, 'reportingComponent': '', 'reportingInstance': ''}
   info: Function.http-trigger[0]
         Executed 'Functions.http-trigger' (Succeeded, Id=4b20130f-0869-4a16-aff1-11da9a447dbd)
   ```
 
 # Troubleshooting
+
+* Status is a duplicate.
+
+When monitoring the logs if you see the following message: 
+```
+Error processing event or posting update.
+      Message: [{'code': 187, 'message': 'Status is a duplicate.'}]
+```
+That's because Twitter's API don't allow for duplicate messages within a certain period of time.  
 
 

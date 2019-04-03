@@ -1,0 +1,23 @@
+container:
+  env:
+  - name: consumer_key
+    valueFrom:
+      secretKeyRef:
+        key: consumer_key
+        name: twitter.creds
+  - name: consumer_secret
+    valueFrom:
+      secretKeyRef:
+        key: consumer_secret
+        name: twitter.creds
+  - name: access_token
+    valueFrom:
+      secretKeyRef:
+        key: access_token
+        name: twitter.creds
+  - name: access_token_secret
+    valueFrom:
+      secretKeyRef:
+        key: access_token_secret
+        name: twitter.creds
+  image: docker.io/markito/httptrigger

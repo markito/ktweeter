@@ -1,0 +1,11 @@
+apiVersion: eventing.knative.dev/v1alpha1
+kind: Subscription
+metadata:
+  name: testevents-subscription
+spec:
+  channel:
+    apiVersion: eventing.knative.dev/v1alpha1
+    kind: Channel
+    name: testchannel
+  subscriber:
+    dnsName: http://http-trigger.azure-functions.svc.cluster.local/api/http-trigger

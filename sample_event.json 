@@ -1,0 +1,29 @@
+{
+   'metadata':{
+      'name':'route-059ca86d-565b-11e9-987e-080027092e8c.1592158e5253037b',
+      'namespace':'default',
+      'selfLink':'/api/v1/namespaces/default/events/route-059ca86d-565b-11e9-987e-080027092e8c.1592158e5253037b',
+      'uid':'2dee0198-565b-11e9-987e-080027092e8c',
+      'resourceVersion':'272479',
+      'creationTimestamp':'2019-04-03T21:55:22Z'
+   },
+   'involvedObject':{
+      'kind':'ClusterIngress',
+      'name':'route-059ca86d-565b-11e9-987e-080027092e8c',
+      'uid':'0a8eb29f-565b-11e9-987e-080027092e8c',
+      'apiVersion':'networking.internal.knative.dev/v1alpha1',
+      'resourceVersion':'272169'
+   },
+   'reason':'Updated',
+   'message':'Updated status for VirtualService "knative-serving"/"route-059ca86d-565b-11e9-987e-080027092e8c"',
+   'source':{
+      'component':'clusteringress-controller'
+   },
+   'firstTimestamp':'2019-04-03T21:55:22Z',
+   'lastTimestamp':'2019-04-03T21:58:16Z',
+   'count':6,
+   'type':'Normal',
+   'eventTime':None,
+   'reportingComponent':'',
+   'reportingInstance':''
+}
