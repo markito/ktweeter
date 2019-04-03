@@ -151,6 +151,8 @@ You should see something like:
         Executed 'Functions.http-trigger' (Succeeded, Id=4b20130f-0869-4a16-aff1-11da9a447dbd)
   ```
 
+![Twitter feed](https://raw.githubusercontent.com/markito/ktweeter/master/screenshot.png)
+
 # Troubleshooting
 
 * Status is a duplicate.
