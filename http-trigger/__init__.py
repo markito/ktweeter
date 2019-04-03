@@ -28,7 +28,7 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
         jsonEvent = req.get_json()
         if jsonEvent:
             logging.info(jsonEvent)
-            message = jsonEvent['lastTimestamp'] + ':' + jsonEvent['message']
+            message = jsonEvent['lastTimestamp'] + ' : ' + jsonEvent['message']
             message = (message[:charLimit-3] + "...") if len(message) > charLimit else message
             twitterClient.PostUpdate(message)
             return func.HttpResponse("Posted.",status_code=200)

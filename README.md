@@ -114,19 +114,19 @@ This patch will generate a new Revision in the Knative service since we are modi
 
 ### Create a ServiceAccount with permissions to watch k8s events
 
-`kubectl apply -f serviceAccount.yaml`
+`kubectl apply -f eventing/serviceAccount.yaml`
 
 ### Create a Knative Eventing Channel
 
-`kubectl apply -f channel.yaml`
+`kubectl apply -f eventing/channel.yaml`
 
 ### Create a KubernetesEventSource
 
-`kubectl apply -f k8sEventSource.yaml`
+`kubectl apply -f eventing/k8sEventSource.yaml`
 
 ### Create a Subscription pointing to our Azure Function
 
-`kubectl apply -f subscription.yaml`
+`kubectl apply -f eventing/subscription.yaml`
 
 # Sending event 
 
