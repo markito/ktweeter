@@ -1,0 +1,9 @@
+[
+    {
+        "op": "add",
+        "path": "/data/",
+        "value": {
+            "istio.sidecar.includeOutboundIPRanges": "10.0.0.1/24"
+        }
+    }
+]
