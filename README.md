@@ -10,12 +10,19 @@ An example of an Azure Function that can post K8s events to a Twitter feed runni
 
 #### On OpenShift 
 
-Make sure you have a cluster Knative installed.  Instructions here...
+Make sure you have a cluster Knative installed or follow these [instructions.](https://github.com/openshift-cloud-functions/Documentation/blob/master/knative-OCP-4x.md)
 
 #### On Minikube
 
-Follow the instructions here to setup Minikube and Knative. https://redhat-developer-demos.github.io/knative-tutorial/knative-tutorial/v1.0.0/setup.html#kubernetes-cluster
+Follow the instructions [here](https://redhat-developer-demos.github.io/knative-tutorial/knative-tutorial/v1.0.0/setup.html#kubernetes-cluster) to setup Minikube and Knative. 
 
+#### Egress traffic (Internet connectivity)
+
+In order to allow egress traffic you need to configure one of the Knative Serving config maps.  An example of how to do configure minikube is avaible on the patches folder and can be applied as follows:
+
+`kubectl patch configmap/config-network -n knative-serving --type json --patch "$(cat patches/patch_config-network.json)"`
+
+This is required for the function to post on Twitter. For more information please check the examples [here](https://github.com/knative/serving/blob/master/config/config-network.yaml).  
 
 ## Create a function project 
 
@@ -91,7 +98,7 @@ VkFMVUU=`
 * We need to add the secrets to the service specification.  The easiest way to do that is to apply a patch as follows: 
 
   ```
-  kubectl patch ksvc/http-trigger -n azure-functions --type json --patch "$(cat env_patch.json)"
+  kubectl patch ksvc/http-trigger -n azure-functions --type json --patch "$(cat patches/env_patch.json)"
   service.serving.knative.dev/http-trigger patched
   ```
 
@@ -128,7 +135,7 @@ This patch will generate a new Revision in the Knative service since we are modi
 
 `kubectl apply -f eventing/subscription.yaml`
 
-# Sending event 
+# Sending events 
 
 * Create a Kubernetes event to confirm things work
   `kubectl run -n default -i --tty busybox --image=busybox --restart=Never --rm=true -- sh`
