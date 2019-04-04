@@ -52,6 +52,7 @@ https://docs.microsoft.com/en-us/azure/azure-functions/functions-create-first-fu
           }
       },
   }
+  EOF
   ```
 * Disable auth for our http trigger
 
