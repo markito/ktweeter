@@ -180,4 +180,5 @@ Python 3.6 is required. Current python version is 'Python 2.7.15
 Workaround: Create a Python environment using the new version. For example:
 
 ```python3.6 -m venv .env
-source .env/bin/activate```
+source .env/bin/activate
+```
