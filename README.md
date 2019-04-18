@@ -4,7 +4,7 @@ An example of an Azure Function that can post K8s events to a Twitter feed runni
 ## Setup
 
 ### Prerequisites:
-- Download Azure Functions CLI `func`.  https://github.com/Azure/azure-functions-core-tools/releases
+- Download and install Azure Functions CLI `func`.  https://github.com/Azure/azure-functions-core-tools#installing
 - Python 3.6
 - Setup OpenShift/Kubernetes as described below with Knative.
 
