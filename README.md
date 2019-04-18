@@ -172,4 +172,12 @@ Error processing event or posting update.
 ```
 That's because Twitter's API don't allow for duplicate messages within a certain period of time.  
 
+* Old Python version being detected.
 
+```func init --worker-runtime python --docker
+Python 3.6 is required. Current python version is 'Python 2.7.15
+```
+Workaround: Create a Python environment using the new version. For example:
+
+```python3.6 -m venv .env
+source .env/bin/activate```
