@@ -14,7 +14,7 @@ Make sure you have a cluster Knative installed or follow these [instructions.](h
 
 #### On Minikube
 
-Follow the instructions [here](https://redhat-developer-demos.github.io/knative-tutorial/knative-tutorial/v1.0.0/setup.html#kubernetes-cluster) to setup Minikube and Knative. 
+Follow the instructions [here](https://redhat-developer-demos.github.io/knative-tutorial/knative-tutorial/0.4.0/01-setup.html#install-knative-minikube) to setup Minikube and Knative. 
 
 #### Egress traffic (Internet connectivity)
 
