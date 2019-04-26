@@ -28,9 +28,11 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
         jsonEvent = req.get_json()
         if jsonEvent:
             logging.info(jsonEvent)
-            message = jsonEvent['lastTimestamp'] + ' : ' + jsonEvent['message']
-            message = (message[:charLimit-3] + "...") if len(message) > charLimit else message
-            twitterClient.PostUpdate(message)
+            if 'Created Migration' in jsonEvent['message']:
+                vmname = jsonEvent['involvedObject']['name']
+                message = jsonEvent['lastTimestamp'] + ' : ' + "Virtual Machine %s migrated!!!" % vmname
+                message = (message[:charLimit-3] + "...") if len(message) > charLimit else message
+                twitterClient.PostUpdate(message)
             return func.HttpResponse("Posted.",status_code=200)
         else:
             raise Exception("No content to post or unknown error for request: {}".format(req))
